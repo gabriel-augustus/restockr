@@ -17,6 +17,8 @@ Files:
                                (empty qty = ask the user the first time, then save it)
   options.csv                  ranked choices per product (1st, 2nd... with brand,
                                size and quantity each)
+  mapping.csv                  product/option -> shop product id, pack size, last price
+  config.json                  small settings (e.g. which Reminders list to read)
   history/imported_orders.txt  ids of receipts already counted (no items, no prices),
                                so re-importing never double-counts
 
@@ -61,6 +63,14 @@ ALIAS_FIELDS = ["alias", "canonical_id", "quantity", "notes"]
 # quantity here wins over the alias quantity (e.g. 8 x 1.5 L but 6 x 2 L).
 # An option with no brand means "anything matching this description".
 OPTION_FIELDS = ["canonical_id", "rank", "description", "brand", "size", "quantity", "notes"]
+
+# Product -> shop product, built up one shopping list at a time.
+# rank: which option this fulfils (0 = the product in general, no options).
+# pack_units: how many of the user's units one shop product holds (6 for a 6-pack).
+# match: "direct" (same product/brand/size, saved without asking) or "confirmed" (user chose).
+MAPPING_FIELDS = ["shop", "canonical_id", "rank", "product_id", "product_name", "pack_units",
+                  "match", "last_price_eur", "mapped_on"]
+MATCH_KINDS = ("direct", "confirmed")
 
 
 def data_dir() -> Path:
@@ -218,3 +228,27 @@ def save_options(rows: list[dict]) -> None:
 def options_for(canonical_id: str) -> list[dict]:
     return sorted((o for o in load_options() if o["canonical_id"] == canonical_id),
                   key=lambda o: int(o["rank"]))
+
+
+# --- shop mapping ------------------------------------------------------------
+
+def load_mapping() -> list[dict]:
+    return _load_csv("mapping.csv")
+
+
+def save_mapping(rows: list[dict]) -> None:
+    rows = sorted(rows, key=lambda r: (r["shop"], r["canonical_id"], int(r["rank"])))
+    _save_csv("mapping.csv", MAPPING_FIELDS, rows)
+
+
+# --- config ------------------------------------------------------------------
+
+def load_config() -> dict:
+    import json
+    p = _path("config.json")
+    return json.loads(p.read_text()) if p.exists() else {}
+
+
+def save_config(cfg: dict) -> None:
+    import json
+    _atomic_write(_path("config.json"), json.dumps(cfg, indent=2, ensure_ascii=False) + "\n")

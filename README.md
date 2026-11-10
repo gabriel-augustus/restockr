@@ -37,9 +37,10 @@ Ask Claude in plain words:
 
 - **"Import my REWE eBons from `<folder>`"**: builds your product list from REWE
   receipt PDFs (exported from the REWE app).
-- **"Plan my grocery shopping: milk, eggs x2, coffee"**: matches each item to one of
-  your products. Wording it hasn't seen yet gets a question once, and the answer is
-  remembered.
+- **"Do my grocery shopping"**: reads your Apple Reminders grocery list (or a list you
+  paste), matches each item to your usual product and to a Knuspr product, fills the
+  Knuspr cart and gives you the checkout link. Wording, quantities and Knuspr products
+  it doesn't know yet get a question once; the answers are remembered.
 
 ## Your data
 
@@ -49,18 +50,20 @@ product counts, the last price and the cheapest price are kept. See
 
 ## Never buys
 
-A hook blocks every Knuspr tool that looks like checkout, ordering or payment before it
-runs.
+A hook allows only Knuspr's read-only tools and the cart tools (add, update, remove,
+clear). Checkout, payment, delivery slots and existing orders are blocked before they
+run, as is any tool Knuspr adds in future.
 
 ## Status
 
 | Feature | State |
 |---|---|
 | Product list from REWE eBons | Works |
-| Shopping list → planned cart | Works (dry run, no shop calls yet) |
 | Knuspr login (OAuth) | Works |
-| Filling the Knuspr cart | Not yet |
-| Reading Apple Reminders | Not yet |
+| Reading Apple Reminders | Works (macOS) |
+| Matching products to Knuspr, one list at a time | Works |
+| Filling the Knuspr cart | Works (early, not yet tested on a real weekly run) |
+| Price comparison vs last time / cheapest | Works (per unit) |
 
 ## Roadmap
 

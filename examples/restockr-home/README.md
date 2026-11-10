@@ -16,6 +16,8 @@ RESTOCKR_HOME=examples/restockr-home uv run scripts/catalog.py lookup "milk" "wa
 | `products.csv` | you/Claude (`generic_spec` … `notes`) + `build_products.py` (the rest) | One row per product you actually restock. |
 | `aliases.csv` | `catalog.py alias` | Shopping-list words → product + default quantity. Several words can point to one product. An empty quantity means "ask the first time". |
 | `options.csv` | `catalog.py option` | Ranked choices per product: 1st choice, then fallbacks if it's sold out. Each can have its own size and quantity. |
+| `mapping.csv` | `mapping.py set` | Product (or one of its options) → Knuspr product id. `pack_units` = how many of your units one Knuspr product holds (6 for a 6-pack). `match` = `direct` (saved automatically) or `confirmed` (you chose it). Grows one shopping list at a time. |
+| `config.json` | `reminders.py use` | Which Apple Reminders list is the grocery list. |
 | `history/imported_orders.txt` | importers | IDs of receipts already counted, so re-imports don't double-count. Nothing else. |
 
 ## Columns worth knowing

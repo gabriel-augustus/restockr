@@ -1,0 +1,5 @@
+shop,canonical_id,rank,product_id,product_name,pack_units,match,last_price_eur,mapped_on
+knuspr,bananas,0,900101,Bananen lose ca. 1 kg,1,direct,1.79,2025-07-05
+knuspr,penne,1,900102,De Cecco Penne Rigate 500 g,1,direct,2.49,2025-07-05
+knuspr,sparkling-water,1,900103,Gerolsteiner Sprudel 6x0.75 l Glas,6,direct,5.99,2025-07-05
+knuspr,sparkling-water,2,900104,Gerolsteiner Sprudel 6x1 l PET,6,confirmed,4.49,2025-07-05
