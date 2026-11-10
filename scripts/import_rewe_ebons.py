@@ -33,6 +33,7 @@ ITEM = re.compile(
 )
 QTY = re.compile(r"^\s*(?P<n>\d+)\s+Stk\s+x\s+(?P<price>-?\d+,\d{2})\s*$")
 WEIGHT = re.compile(r"^\s*Handeingabe E-Bon\s+(?P<kg>\d+,\d+)\s*kg\s*$")
+KG_PRICE = re.compile(r"^\s*(?P<kg>\d+,\d+)\s*kg\s+x\s+(?P<per_kg>\d+,\d{2})\s+EUR/kg\s*$")
 FOOTER = re.compile(r"(\d{2}\.\d{2}\.\d{4})\s+(\d{2}:\d{2})\s+Bon-Nr\.?:\s*(\d+)")
 MARKT = re.compile(r"Markt:\s*(\d+)")
 
@@ -100,6 +101,16 @@ def parse_ebon_text(text: str) -> list[dict]:
                 raise ParseError(f"weight line before any item: {raw!r}")
             items[-1]["weight_kg"] = float(m["kg"].replace(",", "."))
             items[-1]["raw"] += "\n" + raw.strip()
+            continue
+        if m := KG_PRICE.match(raw):  # "<weight> kg x <price> EUR/kg" under a weighed item
+            if not items:
+                raise ParseError(f"weight line before any item: {raw!r}")
+            it = items[-1]
+            grams, per_kg = int(m["kg"].replace(",", "")), cents(m["per_kg"])
+            if round(grams * per_kg / 1000) != it["_amount"]:
+                raise ParseError(f"{it['product_name']}: {m['kg']} kg x {m['per_kg']} != {it['_amount']}")
+            it["weight_kg"] = grams / 1000
+            it["raw"] += "\n" + raw.strip()
             continue
         if m := ITEM.match(raw):
             amount = cents(m["amount"])

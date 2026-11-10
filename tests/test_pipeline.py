@@ -36,6 +36,7 @@ def test_parses_all_line_types():
     milk = by_name["H-MILCH 3,5%"]
     assert (milk["quantity"], milk["unit_price_eur"], milk["line_total_eur"]) == (2, 1.09, 2.18)
     assert by_name["BANANEN LOSE"]["weight_kg"] == 0.725
+    assert by_name["PASTINAKE"]["weight_kg"] == 0.49
     assert by_name["AVOCADO"]["discount_eur"] == -0.75
     assert by_name["PFAND 0,25 EURO"]["kind"] == "deposit"
     assert by_name["LEERGUT EINWEG"]["kind"] == "deposit_return"
@@ -44,7 +45,12 @@ def test_parses_all_line_types():
 
 def test_total_mismatch_is_rejected():
     with pytest.raises(rewe.ParseError, match="SUMME"):
-        rewe.parse_ebon_text(FAKE.replace("6,31", "9,99"))
+        rewe.parse_ebon_text(FAKE.replace("7,78", "9,99"))
+
+
+def test_kg_price_must_add_up():
+    with pytest.raises(rewe.ParseError, match="PASTINAKE"):
+        rewe.parse_ebon_text(FAKE.replace("2,99 EUR/kg", "3,99 EUR/kg"))
 
 
 def test_unknown_line_is_rejected():
@@ -57,7 +63,7 @@ def test_last_and_cheapest_price_and_idempotent_reimport():
     later = purchases(FAKE.replace("Bon-Nr.:1234", "Bon-Nr.:5678")
                       .replace("01.03.2025", "01.04.2025")
                       .replace("2,18 B", "2,58 B").replace("x    1,09", "x    1,29")
-                      .replace("6,31", "6,71"))
+                      .replace("7,78", "8,18"))
     assert store.record_purchases(later + first) == (2, 0)
     assert store.record_purchases(first) == (0, 1)  # already counted
     milk = next(v for v in store.load_variants() if v["product_name"] == "H-MILCH 3,5%")
