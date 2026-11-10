@@ -1,0 +1,21 @@
+          Musterstr. 1
+          12345 Musterstadt
+       UID Nr.: DE000000000
+                                     EUR
+H-MILCH 3,5%                     2,18 B
+            2 Stk x    1,09
+BANANEN LOSE                     1,45 B
+      Handeingabe E-Bon   0,725 kg
+AVOCADO                          2,49 B
+ Frischerabatt                  -0,75 B
+APFELSCHORLE                     1,19 A
+PFAND 0,25 EURO                  0,25 A *
+LEERGUT EINWEG                  -0,50 A *
+            2 Stk x    0,25
+--------------------------------------
+ SUMME                    EUR      6,31
+======================================
+ Geg. VISA                EUR      6,31
+
+ 01.03.2025      12:34       Bon-Nr.:1234
+ Markt:0999    Kasse:1    Bed.:000001
