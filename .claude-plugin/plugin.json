@@ -3,5 +3,11 @@
   "version": "0.1.0",
   "description": "Builds a grocery cart from your shopping list using the products you actually buy. Never places the order.",
   "author": { "name": "gabriel-augustus", "url": "https://github.com/gabriel-augustus" },
-  "keywords": ["groceries", "shopping", "rewe", "knuspr"]
+  "keywords": ["groceries", "shopping", "rewe", "knuspr"],
+  "mcpServers": {
+    "knuspr": {
+      "type": "http",
+      "url": "https://mcp.knuspr.de/mcp"
+    }
+  }
 }
