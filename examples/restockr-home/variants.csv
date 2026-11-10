@@ -1,0 +1,12 @@
+source,product_name,times_bought,total_quantity,first_bought,last_bought,last_price_eur,cheapest_price_eur,canonical_id,notes
+rewe_store,"VOLLMILCH 3,5%",12,22,2025-01-04,2025-06-21,1.19,1.09,fresh-milk-3.5,
+rewe_store,BANANEN LOSE,9,9,2025-01-04,2025-06-14,1.89,1.49,bananas,
+rewe_store,GEROLSTEINER SPR,8,14,2025-01-11,2025-06-21,0.89,0.69,sparkling-water,
+rewe_store,JA! HAFERFLOCKEN,7,7,2025-01-11,2025-06-07,0.99,0.89,rolled-oats,
+rewe_store,JA! LANGKORNREIS,5,5,2025-02-01,2025-06-14,1.79,1.49,long-grain-rice,
+rewe_store,PENNE RIGATE 41,4,6,2025-01-18,2025-05-31,2.29,1.79,penne,
+rewe_store,JA! KUECHENROLLE,3,3,2025-02-08,2025-06-07,2.49,2.49,kitchen-roll,
+rewe_store,"WEIDEMILCH 3,5%",2,2,2025-03-15,2025-04-12,1.39,1.29,fresh-milk-3.5,different brand of the same milk
+rewe_store,REIS LANGKORN 1KG,2,2,2025-03-01,2025-05-03,1.99,1.69,long-grain-rice,
+rewe_store,GRILLKOHLE,1,1,2025-05-24,2025-05-24,4.99,4.99,skip,bought once; set a canonical_id to keep it
+rewe_store,MEHRWEGTASCHE,1,1,2025-02-08,2025-02-08,1.50,1.50,skip,reusable bag
