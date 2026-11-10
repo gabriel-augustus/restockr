@@ -5,13 +5,21 @@
 
 Usage:
   uv run catalog.py lookup "milk" "Milch x2" ...
-      For each item: KNOWN (alias -> product, spec, brand policy, default qty,
-      last/cheapest price) or UNKNOWN. Matching is exact on the normalised
-      alias (lowercase, single spaces). Fuzzy guessing is Claude's job, and
-      Claude must ask the user before saving a new alias.
+      For each item: KNOWN (alias -> product, spec, brand policy, quantity, ranked
+      options, last/cheapest price) or UNKNOWN. Matching is exact on the normalised
+      alias (lowercase, single spaces). Fuzzy guessing is Claude's job, and Claude
+      must ask the user before saving a new alias.
+      qty=ASK means nobody has said how many yet: ask the user, then save it.
 
   uv run catalog.py alias "<alias>" <canonical_id> [--quantity N] [--notes TEXT]
       Save or update an alias. Several aliases may point to one product.
+      Without --quantity the quantity stays empty (= ask on first use).
+
+  uv run catalog.py option <canonical_id> <rank> --desc TEXT [--brand TEXT]
+          [--size TEXT] [--quantity N] [--notes TEXT]
+      Add or replace the rank-N choice for a product (1 = first choice).
+      An option's quantity wins over the alias quantity.
+  uv run catalog.py option <canonical_id> <rank> --remove
 
   uv run catalog.py product <canonical_id> --spec TEXT --category TEXT
           --brand-policy exact|store_brand_or_cheapest|any
@@ -29,9 +37,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import store  # noqa: E402
 
 
+def _fmt_option(o: dict) -> str:
+    bits = [o["description"]]
+    if o["quantity"]:
+        bits.append(f"x{o['quantity']}")
+    return f"{o['rank']}:{' '.join(bits)}"
+
+
 def lookup(items: list[str]) -> int:
     aliases = {a["alias"]: a for a in store.load_aliases()}
     products = {p["canonical_id"]: p for p in store.load_products()}
+    options = store.load_options()
     for item in items:
         a = aliases.get(store.normalise_alias(item))
         if not a:
@@ -41,22 +57,52 @@ def lookup(items: list[str]) -> int:
         if not p:
             print(f"BROKEN\t{item}\talias points to missing product {a['canonical_id']}")
             continue
-        print(f"KNOWN\t{item}\t{p['canonical_id']}\tqty={a['quantity'] or 1}\t{p['generic_spec']}"
+        opts = sorted((o for o in options if o["canonical_id"] == p["canonical_id"]),
+                      key=lambda o: int(o["rank"]))
+        # option 1's quantity wins over the alias (8 x 1.5 L vs 6 x 2 L); then the alias; else ask
+        qty = (opts[0]["quantity"] if opts and opts[0]["quantity"] else "") or a["quantity"] or "ASK"
+        print(f"KNOWN\t{item}\t{p['canonical_id']}\tqty={qty}\t{p['generic_spec']}"
               f"\tpolicy={p['brand_policy']}"
               + (f"\tbrand={p['preferred_brand']}" if p["preferred_brand"] else "")
+              + (f"\toptions={' | '.join(_fmt_option(o) for o in opts)}" if opts else "")
               + f"\tlast={p['last_price_eur'] or '-'}\tcheapest={p['cheapest_price_eur'] or '-'}")
     return 0
 
 
+def _product_exists(cid: str) -> bool:
+    if cid in {p["canonical_id"] for p in store.load_products()}:
+        return True
+    print(f"No product {cid!r} in products.csv. Create it first (catalog.py product ...).")
+    return False
+
+
 def save_alias(alias: str, cid: str, quantity: str, notes: str) -> int:
-    if cid not in {p["canonical_id"] for p in store.load_products()}:
-        print(f"No product {cid!r} in products.csv. Create it first (catalog.py product ...).")
+    if not _product_exists(cid):
         return 1
     key = store.normalise_alias(alias)
     rows = [a for a in store.load_aliases() if a["alias"] != key]
     rows.append({"alias": key, "canonical_id": cid, "quantity": quantity, "notes": notes})
     store.save_aliases(rows)
-    print(f"alias {key!r} -> {cid} (qty {quantity})")
+    print(f"alias {key!r} -> {cid} (qty {quantity or 'ASK'})")
+    return 0
+
+
+def save_option(a: argparse.Namespace) -> int:
+    if not _product_exists(a.canonical_id):
+        return 1
+    rows = [o for o in store.load_options()
+            if not (o["canonical_id"] == a.canonical_id and int(o["rank"]) == a.rank)]
+    if a.remove:
+        store.save_options(rows)
+        print(f"option {a.rank} of {a.canonical_id} removed")
+        return 0
+    if not a.desc:
+        print("--desc is required")
+        return 1
+    rows.append({"canonical_id": a.canonical_id, "rank": str(a.rank), "description": a.desc,
+                 "brand": a.brand, "size": a.size, "quantity": a.quantity, "notes": a.notes})
+    store.save_options(rows)
+    print(f"option {a.rank} of {a.canonical_id}: {a.desc}" + (f" x{a.quantity}" if a.quantity else ""))
     return 0
 
 
@@ -84,7 +130,11 @@ def main(argv: list[str]) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("lookup"); s.add_argument("items", nargs="+")
     s = sub.add_parser("alias"); s.add_argument("alias"); s.add_argument("canonical_id")
-    s.add_argument("--quantity", default="1"); s.add_argument("--notes", default="")
+    s.add_argument("--quantity", default=""); s.add_argument("--notes", default="")
+    s = sub.add_parser("option"); s.add_argument("canonical_id"); s.add_argument("rank", type=int)
+    s.add_argument("--desc", default=""); s.add_argument("--brand", default="")
+    s.add_argument("--size", default=""); s.add_argument("--quantity", default="")
+    s.add_argument("--notes", default=""); s.add_argument("--remove", action="store_true")
     s = sub.add_parser("product"); s.add_argument("canonical_id")
     s.add_argument("--spec", required=True); s.add_argument("--category", required=True)
     s.add_argument("--brand-policy", required=True)
@@ -94,6 +144,8 @@ def main(argv: list[str]) -> int:
         return lookup(a.items)
     if a.cmd == "alias":
         return save_alias(a.alias, a.canonical_id, a.quantity, a.notes)
+    if a.cmd == "option":
+        return save_option(a)
     return save_product(a)
 
 

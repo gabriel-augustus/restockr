@@ -111,5 +111,33 @@ def test_aliases(capsys):
     catalog.main(["x", "lookup", "MILK", "milch", "bread"])
     out = capsys.readouterr().out.splitlines()
     assert out[0].startswith("KNOWN\tMILK\tmilk\tqty=2")
-    assert out[1].startswith("KNOWN\tmilch\tmilk\tqty=1")
+    assert out[1].startswith("KNOWN\tmilch\tmilk\tqty=ASK")  # no quantity given yet
     assert out[2] == "UNKNOWN\tbread"
+
+
+def test_ranked_options(capsys):
+    store.save_products([{"canonical_id": "water", "generic_spec": "Sparkling water",
+                          "brand_policy": "exact"}])
+    catalog.main(["x", "alias", "wasser", "water"])
+    assert catalog.main(["x", "option", "water", "2", "--desc", "Brand B 1 L", "--quantity", "6"]) == 0
+    assert catalog.main(["x", "option", "water", "1", "--desc", "Brand A 0.75 L", "--quantity", "12"]) == 0
+    assert catalog.main(["x", "option", "nope", "1", "--desc", "x"]) == 1
+    assert [o["rank"] for o in store.options_for("water")] == ["1", "2"]
+    capsys.readouterr()
+    catalog.main(["x", "lookup", "wasser"])
+    out = capsys.readouterr().out
+    assert "qty=12" in out  # first option's quantity when the alias has none
+    assert "options=1:Brand A 0.75 L x12 | 2:Brand B 1 L x6" in out
+
+    catalog.main(["x", "alias", "wasser", "water", "--quantity", "3"])
+    capsys.readouterr()
+    catalog.main(["x", "lookup", "wasser"])
+    assert "qty=12" in capsys.readouterr().out  # option quantity wins over alias quantity
+
+    catalog.main(["x", "option", "water", "1", "--desc", "Brand C 1.5 L"])  # replace rank 1, no qty
+    capsys.readouterr()
+    catalog.main(["x", "lookup", "wasser"])
+    assert "qty=3" in capsys.readouterr().out  # falls back to the alias quantity
+    assert [o["description"] for o in store.options_for("water")] == ["Brand C 1.5 L", "Brand B 1 L"]
+    catalog.main(["x", "option", "water", "2", "--remove"])
+    assert len(store.options_for("water")) == 1

@@ -14,6 +14,9 @@ Files:
   products.csv                 canonical products: generic spec, brand policy,
                                rolled-up counts and prices
   aliases.csv                  shopping-list words -> canonical product + default qty
+                               (empty qty = ask the user the first time, then save it)
+  options.csv                  ranked choices per product (1st, 2nd... with brand,
+                               size and quantity each)
   history/imported_orders.txt  ids of receipts already counted (no items, no prices),
                                so re-importing never double-counts
 
@@ -53,6 +56,11 @@ PRODUCT_COMPUTED_FIELDS = [
 PRODUCT_FIELDS = ["canonical_id", *PRODUCT_JUDGMENT_FIELDS, *PRODUCT_COMPUTED_FIELDS]
 
 ALIAS_FIELDS = ["alias", "canonical_id", "quantity", "notes"]
+
+# Ranked choices for one product, tried in rank order when building a cart.
+# quantity here wins over the alias quantity (e.g. 8 x 1.5 L but 6 x 2 L).
+# An option with no brand means "anything matching this description".
+OPTION_FIELDS = ["canonical_id", "rank", "description", "brand", "size", "quantity", "notes"]
 
 
 def data_dir() -> Path:
@@ -194,3 +202,19 @@ def load_aliases() -> list[dict]:
 def save_aliases(rows: list[dict]) -> None:
     rows = sorted(rows, key=lambda r: (r["canonical_id"], r["alias"]))
     _save_csv("aliases.csv", ALIAS_FIELDS, rows)
+
+
+# --- options ---------------------------------------------------------------
+
+def load_options() -> list[dict]:
+    return _load_csv("options.csv")
+
+
+def save_options(rows: list[dict]) -> None:
+    rows = sorted(rows, key=lambda r: (r["canonical_id"], int(r["rank"])))
+    _save_csv("options.csv", OPTION_FIELDS, rows)
+
+
+def options_for(canonical_id: str) -> list[dict]:
+    return sorted((o for o in load_options() if o["canonical_id"] == canonical_id),
+                  key=lambda o: int(o["rank"]))
