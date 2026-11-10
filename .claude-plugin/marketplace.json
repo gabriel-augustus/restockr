@@ -1,0 +1,12 @@
+{
+  "name": "restockr",
+  "owner": { "name": "gabriel-augustus", "url": "https://github.com/gabriel-augustus" },
+  "description": "Restockr: grocery carts from your shopping list, built from what you actually buy.",
+  "plugins": [
+    {
+      "name": "restockr",
+      "source": "./",
+      "description": "Builds a grocery cart from your shopping list using the products you actually buy. Never places the order."
+    }
+  ]
+}

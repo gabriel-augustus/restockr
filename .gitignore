@@ -1,0 +1,20 @@
+# Personal data never lives in the repo (it goes to ~/Restockr/), but just in case:
+*.jsonl
+products.csv
+variants.csv
+mapping.csv
+*.pdf
+!tests/fixtures/**
+
+aliases.csv
+imported_orders.txt
+!examples/**
+
+# Local working notes for Claude (personal context, not for the public repo)
+CLAUDE.md
+.claude/settings.local.json
+
+__pycache__/
+.pytest_cache/
+.venv/
+.DS_Store
